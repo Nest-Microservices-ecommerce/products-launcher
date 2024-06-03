@@ -1,9 +1,15 @@
 version: '3'
 services:
+#================================    
+# NATS Server
+#================================    
   nats-server:
     image: nats:latest
     ports:
       - "8222:8222"
+#================================    
+# Client Gateway
+#================================    
   client-gateway:
     build: ./client-gateway
     ports:
@@ -14,6 +20,9 @@ services:
     environment:
       - PORT=3000
       - NATS_SERVERS=nats://nats-server:4222
+#================================    
+# Products-ms
+#================================    
   products-ms:
     build: ./products-ms
     volumes:
@@ -23,6 +32,9 @@ services:
       - PORT=3001
       - DATABASE_URL=file:./dev.db
       - NATS_SERVERS=nats://nats-server:4222
+#================================    
+# Orders-ms
+#================================    
   orders-ms:
     depends_on:
       - orders-db
@@ -46,3 +58,21 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=orders
+#================================    
+# Payments-ms
+#================================    
+  payments-ms:
+    container_name: payments-ms
+    build: ./payments-ms
+    volumes:
+      - ./payments-ms/src:/usr/src/app/src
+    command: npm run start:dev
+    ports:
+      - ${PAYMETS_MS_PORT}:${PAYMETS_MS_PORT}
+    environment:
+      - PORT=${PAYMETS_MS_PORT}
+      - NATS_SERVERS=nats://nats-server:4222
+      - STRIPE_SECRET=${STRIPE_SECRET}
+      - ENDPOINT_SECRET=${ENDPOINT_SECRET}
+      - SUCCESS_URL=${SUCCESS_URL}
+      - CANCEL_URL=${CANCEL_URL}
